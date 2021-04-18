@@ -1,6 +1,8 @@
 import sqlite3
 import json
 
+
+
 class Person:
     username = ""
 
@@ -36,7 +38,7 @@ class Subscriber(Person):
     pass
 
 class Book:
-    isbn = 0
+    isbn = 0000000000000
 
     title = ''
     author = ''
@@ -63,7 +65,10 @@ class Book:
         self.link = link
         self.imageLink = imageLink
 
+
+
 class Catalog:
+
     books = []
 
     def _init_():
@@ -74,13 +79,17 @@ class Catalog:
 
     def advancedSearch():
         pass
-
+#voeg boek toe
     def addBook():
-        pass
+        books.append(Book(9789029568913, '1984', 'George Orwell', 'Netherlands', 'English', 336, 2008, 'https://nl.wikipedia.org/wiki/1984_(boek)', 'https://kbimages1-a.akamaihd.net/55abfdd4-7e21-4496-a70c-19bca8892bb3/353/569/90/False/NCQNg-qQAT-Z7_F0SBWzjw.jpg' ))
+        books.append(Book(9789020415605, 'Moby-Dick', 'Herman Melville', 'Netherlands', 'English', 640, 2008,'https://www.bol.com/nl/f/moby-dick/9200000079749152/', 'https://media.s-bol.com/mZZYJDPj0jkr/539x840.jpg'  ))
+        books.append(Book(9789044643947, 'Het gouden ei', 'Tim Krabbé', 'Netherlands', 'Dutch', 104, 2019, 'https://www.bol.com/nl/f/gouden-ei/9200000079749088/', 'https://media.s-bol.com/J6Q0MLXyWXxg/525x840.jpg'))
+        
 
+#verwijder boek
     def removeBook():
         pass
-
+#krijg het boek
     def getAvailableBooks():
         pass
 
