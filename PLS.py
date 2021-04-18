@@ -49,7 +49,7 @@ class Book:
     link = ''
     imageLink = ''
 
-    def _init_(self, isbn,  title, author, country, language, pages, year, link, imageLink):
+    def __init__(self, isbn, title, author, country, language, pages, year, link, imageLink):
         self.isbn = isbn
 
         self.title = title 
@@ -127,6 +127,15 @@ class DataStore:
         ''')
         self.db.commit()
 
+    def getBooks(self):
+        books = []
+
+        for row in self.db.execute('SELECT * FROM Books'):
+            books.append(Book(row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8]))
+
+        return books
 
 
 dataStore = DataStore()
+books = dataStore.getBooks()
+print()
