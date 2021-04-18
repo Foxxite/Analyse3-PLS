@@ -79,17 +79,26 @@ class Catalog:
 
     def advancedSearch():
         pass
-#voeg boek toe
+    
+    '''
+        Adding a book
+
+        1) Take all information of the book as parameters
+        2) Create instance of Book class
+        3) Write book to database using the datastore global
+        4) Append book to the internal book list
+    '''
     def addBook():
         books.append(Book(9789029568913, '1984', 'George Orwell', 'Netherlands', 'English', 336, 2008, 'https://nl.wikipedia.org/wiki/1984_(boek)', 'https://kbimages1-a.akamaihd.net/55abfdd4-7e21-4496-a70c-19bca8892bb3/353/569/90/False/NCQNg-qQAT-Z7_F0SBWzjw.jpg' ))
         books.append(Book(9789020415605, 'Moby-Dick', 'Herman Melville', 'Netherlands', 'English', 640, 2008,'https://www.bol.com/nl/f/moby-dick/9200000079749152/', 'https://media.s-bol.com/mZZYJDPj0jkr/539x840.jpg'  ))
         books.append(Book(9789044643947, 'Het gouden ei', 'Tim Krabbé', 'Netherlands', 'Dutch', 104, 2019, 'https://www.bol.com/nl/f/gouden-ei/9200000079749088/', 'https://media.s-bol.com/J6Q0MLXyWXxg/525x840.jpg'))
         
 
-#verwijder boek
+    #verwijder boek
     def removeBook():
         pass
-#krijg het boek
+
+    #krijg het boek
     def getAvailableBooks():
         pass
 
@@ -131,10 +140,14 @@ class DataStore:
                 year	    INTEGER DEFAULT 0000,
                 link	    TEXT,
                 imgLink	    TEXT,
+
                 PRIMARY KEY(isbn)
             )
         ''')
         self.db.commit()
+        
+    def __del__(self):
+        self.db.close()
 
     def getBooks(self):
         books = []
@@ -144,7 +157,24 @@ class DataStore:
 
         return books
 
+    '''
+        Saves an instance of a book class to the Database
+    '''
+    def addBook(self, book):
+        self.cur.execute('''
+            INSERT INTO Books (isbn, title, author, country, language, pages, year, link, imgLink) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
+        ''', (book.isbn, book.title, book.author, book.country, book.language, book.pages, book.year, book.link, book.imageLink))
+
+        self.db.commit()
 
 dataStore = DataStore()
 books = dataStore.getBooks()
+
+'''
+    Example adding book to DB
+    
+    book = Book(9789029568913, '1984', 'George Orwell', 'Netherlands', 'English', 336, 2008, 'https://nl.wikipedia.org/wiki/1984_(boek)', 'https://kbimages1-a.akamaihd.net/55abfdd4-7e21-4496-a70c-19bca8892bb3/353/569/90/False/NCQNg-qQAT-Z7_F0SBWzjw.jpg' )
+    dataStore.addBook(book)
+'''
+
 print()
