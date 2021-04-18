@@ -98,3 +98,35 @@ class LoanAdministration:
 
 class LoanItem():  # <-- call class book and person
     pass
+
+
+class DataStore:
+    books = []
+    persons = []
+
+    db = None
+    cur = None
+
+    def __init__(self):
+        self.db = sqlite3.connect('database.db')
+        self.cur = self.db.cursor()
+
+        self.cur.execute('''
+            CREATE TABLE IF NOT EXISTS Books (
+                isbn        INTEGER,
+                title       TEXT,
+                author      TEXT,
+                country     TEXT,
+                language    TEXT,
+                pages	    INTEGER DEFAULT 0,
+                year	    INTEGER DEFAULT 0000,
+                link	    TEXT,
+                imgLink	    TEXT,
+                PRIMARY KEY(isbn)
+            )
+        ''')
+        self.db.commit()
+
+
+
+dataStore = DataStore()
