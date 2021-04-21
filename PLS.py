@@ -10,7 +10,7 @@ Fase 2
 - Able to list all books
 - Able to view the information of a book
 - Adding books ✔
-- Removing books
+- Removing books ✔
 
 Fase 3
 - Account creation
