@@ -1,21 +1,47 @@
+'''
+ToDo:
+
+Fase 1
+- Base Classes ✔
+- Basic Data Storage ✔
+- Basic User Interface
+
+Fase 2
+- Able to list all books
+- Able to view the information of a book
+- Adding books
+- Removing books
+
+Fase 3
+- Account creation
+- Account permission
+- Restrict book editing to libarian
+
+Fase 4
+- View loons
+- Create loons
+- Remove loons
+
+Fase 5
+- Finish everything
+'''
+
 import sqlite3
 import json
 
-
-
 class Person:
-    username = ""
+    username = "" #string
 
-    givenName = ""
-    surname = ""
-    nameSet = ""
+    givenName = "" #string
+    surname = "" #string
+    nameSet = "" #string
 
-    streetAddress = ""
-    city = ""
-    zipCode = ""
+    streetAddress = "" #string
+    city = "" #string
+    zipCode = "" #string
 
-    emailAddress = ""
-    telephoneNumber = 0000000000
+    emailAddress = "" #string
+    telephoneNumber = 0000000000 #int 10 digits
 
     def __init__(self, username, givenName, surname, streetAddress, city, zipCode, emailAddress, telephoneNumber = 0000000000, nameSet = "Dutch"):
         self.username = username
@@ -38,18 +64,18 @@ class Subscriber(Person):
     pass
 
 class Book:
-    isbn = 0000000000000
+    isbn = 0000000000000 #int 13 digits
 
-    title = ''
-    author = ''
+    title = '' #string
+    author = '' #string
 
-    country = ''
-    language = ''
+    country = '' #string
+    language = '' #string
 
-    pages = 0
-    year = 0000
-    link = ''
-    imageLink = ''
+    pages = 0 #int
+    year = 0000 #int
+    link = '' #string
+    imageLink = '' #string
 
     def __init__(self, isbn, title, author, country, language, pages, year, link, imageLink):
         self.isbn = isbn
@@ -69,7 +95,7 @@ class Book:
 
 class Catalog:
 
-    books = []
+    books = [] #List of Book
 
     def _init_():
         pass
@@ -103,7 +129,7 @@ class Catalog:
         pass
 
 class LoanAdministration:
-    loans = []
+    loans = [] #List of Loan
     
     def getLoansByUsers(self):
         pass
@@ -114,16 +140,19 @@ class LoanAdministration:
     def removeLoan(self):
         pass
 
-class LoanItem():  # <-- call class book and person
+class LoanItem():
+    book = None #Book
+    person = None #Person
+
     pass
 
 
 class DataStore:
-    books = []
-    persons = []
+    books = [] #List of Books
+    persons = [] #List of Persons
 
-    db = None
-    cur = None
+    db = None #SQLite Connection
+    cur = None #SQLite Cursor
 
     def __init__(self):
         self.db = sqlite3.connect('database.db')
@@ -167,8 +196,8 @@ class DataStore:
 
         self.db.commit()
 
-dataStore = DataStore()
-books = dataStore.getBooks()
+dataStore = DataStore() #DataStore
+books = dataStore.getBooks() #List of Book
 
 '''
     Example adding book to DB
