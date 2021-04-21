@@ -91,7 +91,8 @@ class Book:
         self.link = link
         self.imageLink = imageLink
 
-
+    def __eq__(self, oth):
+        return self.isbn == oth.isbn
 
 class Catalog:
 
@@ -175,6 +176,8 @@ class DataStore:
             )
         ''')
         self.db.commit()
+
+        self.books = self.getBooks()
         
     def __del__(self):
         self.db.close()
@@ -189,11 +192,28 @@ class DataStore:
 
     '''
         Saves an instance of a book class to the Database
+        Checks for duplicates
     '''
     def addBook(self, book):
+        if not book in self.books:
+            self.cur.execute('''
+                INSERT INTO Books (isbn, title, author, country, language, pages, year, link, imgLink) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
+            ''', (book.isbn, book.title, book.author, book.country, book.language, book.pages, book.year, book.link, book.imageLink))
+
+            self.db.commit()
+
+            self.books.append(book)
+            return True
+        else:
+            return False
+
+    '''
+        Deletes a book from the Database by ISBN
+    '''
+    def deleteBook(self, book):
         self.cur.execute('''
-            INSERT INTO Books (isbn, title, author, country, language, pages, year, link, imgLink) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
-        ''', (book.isbn, book.title, book.author, book.country, book.language, book.pages, book.year, book.link, book.imageLink))
+            DELETE FROM Books WHERE isbn = ?;
+        ''', (book.isbn))
 
         self.db.commit()
 
