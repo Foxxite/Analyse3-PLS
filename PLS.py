@@ -92,14 +92,19 @@ class Book:
         self.imageLink = imageLink
 
     def __eq__(self, oth):
+        if self != None and oth == None:
+            return False
+        elif oth != None and self == None:
+            return False
+
         return self.isbn == oth.isbn
 
 class Catalog:
 
     books = [] #List of Book
 
-    def _init_():
-        pass
+    def _init_(self, booksFromDatastore):
+        books = booksFromDatastore
     
     def search():
         pass
@@ -123,8 +128,16 @@ class Catalog:
         
 
     #verwijder boek
-    def removeBook():
-        pass
+    def removeBook(self, isbn):
+        book = None
+        for b in books:
+            if b.isbn == isbn:
+                book = b
+                break
+
+        if book != None:
+            books.remove(book)
+            dataStore.deleteBook(book)
 
     #krijg het boek
     def getAvailableBooks():
@@ -219,6 +232,9 @@ class DataStore:
 
 dataStore = DataStore() #DataStore
 books = dataStore.getBooks() #List of Book
+
+catalog = Catalog() 
+catalog.removeBook(1)
 
 '''
     Example adding book to DB
