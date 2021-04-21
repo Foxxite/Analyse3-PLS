@@ -91,20 +91,20 @@ class Book:
         self.link = link
         self.imageLink = imageLink
 
-    def __eq__(self, oth):
-        if self != None and oth == None:
-            return False
-        elif oth != None and self == None:
+    def __eq__(self, other):
+        if isinstance(other, self.__class__):
+            return self.isbn == other.isbn
+        else:
             return False
 
-        return self.isbn == oth.isbn
+    def __ne__(self, other):
+        return not self.__eq__(other)
 
 class Catalog:
-
     books = [] #List of Book
 
-    def _init_(self, booksFromDatastore):
-        books = booksFromDatastore
+    def __init__(self, booksFromDatastore):
+        self.books = booksFromDatastore
     
     def search():
         pass
@@ -125,8 +125,6 @@ class Catalog:
         dataStore.addBook(book)
         books.append(book)
         
-        
-
     #verwijder boek
     def removeBook(self, isbn):
         book = None
@@ -224,16 +222,16 @@ class DataStore:
         Deletes a book from the Database by ISBN
     '''
     def deleteBook(self, book):
-        self.cur.execute('''
-            DELETE FROM Books WHERE isbn = ?;
-        ''', (book.isbn))
+        self.cur.execute('DELETE FROM Books WHERE isbn = ?;', (str(book.isbn)))
 
         self.db.commit()
+
+        self.books.remove(book)
 
 dataStore = DataStore() #DataStore
 books = dataStore.getBooks() #List of Book
 
-catalog = Catalog() 
+catalog = Catalog(books) 
 catalog.removeBook(1)
 
 '''
