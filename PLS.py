@@ -7,8 +7,8 @@ Fase 1
 - Basic User Interface ✔
 
 Fase 2
-- Able to list all books
-- Able to view the information of a book
+- Able to list all books ✔
+- Able to view the information of a book ✔
 - Adding books ✔
 - Removing books ✔
 
@@ -36,7 +36,8 @@ def cls():
 
 class Person:
     username = "" #string
-
+    password = "" #string
+    
     givenName = "" #string
     surname = "" #string
     nameSet = "" #string
@@ -104,7 +105,21 @@ class Book:
 
     def __ne__(self, other):
         return not self.__eq__(other)
+    
+    def viewInfo(self, returnFunction):
+        print(f"ISBN:       {self.isbn}")
+        print(f"Title:      {self.title}")
+        print(f"Author:     {self.author}")
+        print(f"Country:    {self.country}")
+        print(f"Language:   {self.language}")
+        print(f"Pages:      {self.pages}")
+        print(f"Year:       {self.year}")
+        print(f"Website:    {self.link}")
+        print(f"Image:      {self.imageLink}")
 
+        print("\nPress return to return the booklist...")
+        input()
+        returnFunction()
 class Catalog:
     books = [] #List of Book
 
@@ -260,9 +275,13 @@ class Menu:
         print("\nSelect an option by entering it's number and pressing return.")
         selectedIndex = input()
 
+        print("\033[A                             \033[A")
+        
         selectedIndex = int(selectedIndex) if selectedIndex.isdigit() else None
         if selectedIndex != None:
             if selectedIndex < len(self.menuOptions):
+                print("\n")
+                
                 if len(self.menuOptions[selectedIndex]) < 3:
                     self.menuOptions[selectedIndex][1]() # Run the callback of the menu option
                 else:
@@ -288,6 +307,7 @@ class View:
         self.render()
 
     def render(self):
+        cls()
         self.drawTitleBar()
         pass
 
@@ -307,15 +327,23 @@ class MainScreen(View):
         Menu([("List book titles", self.drawBookTitles), ("Debug Menu", self.debug, "test")])
 
     def drawBookTitles(self):
-        cls()
+        bookMenuOptions = []
+        
         for book in catalog.getAvailableBooks():
-            print(book.title)
-            pass
+            bookMenuOptions.append((book.title, book.viewInfo, self.drawBookTitles))
+            
+        bookMenuOptions.append(("Return to Main Menu", self.render))
+        Menu(bookMenuOptions)
+        
 
     def debug(self, arg):
         cls()
         print(f"It works! {arg}")
 
+
+class AccountCreation(View):
+    def render(self):
+        super().render()
 
 mainScreen = MainScreen("Main Menu")
 
