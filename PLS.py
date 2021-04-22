@@ -106,10 +106,10 @@ class Catalog:
     def __init__(self, booksFromDatastore):
         self.books = booksFromDatastore
     
-    def search():
+    def search(self):
         pass
 
-    def advancedSearch():
+    def advancedSearch(self):
         pass
     
     '''
@@ -137,9 +137,9 @@ class Catalog:
             books.remove(book)
             dataStore.deleteBook(book)
 
-    #krijg het boek
-    def getAvailableBooks():
-        pass
+    # Krijg de lijst van alle beschikbare boeken
+    def getAvailableBooks(self):
+        return books
 
 class LoanAdministration:
     loans = [] #List of Loan
@@ -228,11 +228,61 @@ class DataStore:
 
         self.books.remove(book)
 
+'''
+    Globals
+'''
 dataStore = DataStore() #DataStore
 books = dataStore.getBooks() #List of Book
 
 catalog = Catalog(books) 
-catalog.removeBook(1)
+
+'''
+    UI Classes
+'''
+class View:
+    title = ""
+    subTitle = ""
+
+    permLevel = ""
+
+    def __init__(self, title, subTitle = "", permLevel = "user"):
+        self.title = title
+        self.subTitle = subTitle
+        self.permLevel = permLevel
+
+        self.render()
+
+    def render(self):
+        self.drawTitleBar()
+        pass
+
+    def drawTitleBar(self):
+        if self.subTitle != "":
+            print(f'========== {self.title} - {self.subTitle} ==========')
+        else:
+            print(f'========== {self.title} ==========')
+        print()
+
+class MainScreen(View):
+    
+    def render(self):
+        super().render()
+        print("Welcome to the Public Library System.")
+        print()
+        print("Press any key to view the list of books in the system.")
+        
+        input()
+
+        for book in catalog.getAvailableBooks():
+            print(book.title)
+            pass
+
+
+
+mainScreen = MainScreen("Main Menu")
+
+
+
 
 '''
     Example adding book to DB
