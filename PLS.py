@@ -4,7 +4,7 @@ ToDo:
 Fase 1
 - Base Classes ✔
 - Basic Data Storage ✔
-- Basic User Interface
+- Basic User Interface ✔
 
 Fase 2
 - Able to list all books
@@ -28,6 +28,11 @@ Fase 5
 
 import sqlite3
 import json
+import os
+
+# Simple function to clear the console window
+def cls():
+    os.system('cls' if os.name=='nt' else 'clear')
 
 class Person:
     username = "" #string
@@ -239,6 +244,33 @@ catalog = Catalog(books)
 '''
     UI Classes
 '''
+class Menu:
+    menuOptions = []
+
+    def __init__(self, menuOptions):
+        self.menuOptions = menuOptions
+        self.render()
+
+    def render(self):
+        i = 0
+        for menuOption in self.menuOptions:
+            print(f'{i}: {menuOption[0]}')
+            i = i+1
+
+        print("\nSelect an option by entering it's number and pressing return.")
+        selectedIndex = input()
+
+        selectedIndex = int(selectedIndex) if selectedIndex.isdigit() else None
+        if selectedIndex != None:
+            if self.menuOptions[selectedIndex] != None:
+                self.menuOptions[selectedIndex][1]() # Run the callback of the menu option
+            else:
+                print("The input isn't a valid option!\n\n")
+                self.render()
+        else:
+            print("The input isn't a number!\n\n")
+            self.render()
+
 class View:
     title = ""
     subTitle = ""
@@ -264,19 +296,22 @@ class View:
         print()
 
 class MainScreen(View):
-    
     def render(self):
         super().render()
         print("Welcome to the Public Library System.")
         print()
-        print("Press any key to view the list of books in the system.")
         
-        input()
+        Menu([("List book titles", self.drawBookTitles), ("About", self.about)])
 
+    def drawBookTitles(self):
+        cls()
         for book in catalog.getAvailableBooks():
             print(book.title)
             pass
 
+    def about(self):
+        cls()
+        print("It works!")
 
 
 mainScreen = MainScreen("Main Menu")
