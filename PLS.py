@@ -37,12 +37,12 @@ def cls():
     os.system('cls' if os.name=='nt' else 'clear')
 
 class Person:
-    username = "" #string
-    password = "" #string
+    username: str
+    password: str
     
-    givenName = "" #string
-    surname = "" #string
-    nameSet = "" #string
+    givenName: str
+    surname: str
+    nameSet: str
 
     streetAddress: str
     city: str
