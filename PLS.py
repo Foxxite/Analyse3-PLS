@@ -26,9 +26,11 @@ Fase 5
 - Finish everything
 '''
 
+import typing # For type annotation
 import sqlite3
 import json
 import os
+
 
 # Simple function to clear the console window
 def cls():
@@ -42,11 +44,11 @@ class Person:
     surname = "" #string
     nameSet = "" #string
 
-    streetAddress = "" #string
-    city = "" #string
-    zipCode = "" #string
+    streetAddress: str
+    city: str
+    zipCode: str
 
-    emailAddress = "" #string
+    emailAddress: str
     telephoneNumber = 0000000000 #int 10 digits
 
     def __init__(self, username, givenName, surname, streetAddress, city, zipCode, emailAddress, telephoneNumber = 0000000000, nameSet = "Dutch"):
@@ -262,7 +264,11 @@ catalog = Catalog(books)
 class Menu:
     menuOptions = []
 
-    def __init__(self, menuOptions):
+    '''
+        Takes in an array of tuples containing:
+        ("Option Name", CallBack Function, Option parameter for callback)
+    '''
+    def __init__(self, menuOptions: typing.List[typing.Tuple[str, typing.Callable, typing.Any]]):
         self.menuOptions = menuOptions
         self.render()
 
@@ -324,7 +330,11 @@ class MainScreen(View):
         print("Welcome to the Public Library System.")
         print()
         
-        Menu([("List book titles", self.drawBookTitles), ("Debug Menu", self.debug, "test")])
+        Menu([
+            ("List book titles", self.drawBookTitles), 
+            ("Debug Menu", self.debug, "test"),
+            ("Exit", exit),
+        ])
 
     def drawBookTitles(self):
         bookMenuOptions = []
