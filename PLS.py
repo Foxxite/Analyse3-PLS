@@ -262,8 +262,11 @@ class Menu:
 
         selectedIndex = int(selectedIndex) if selectedIndex.isdigit() else None
         if selectedIndex != None:
-            if self.menuOptions[selectedIndex] != None:
-                self.menuOptions[selectedIndex][1]() # Run the callback of the menu option
+            if selectedIndex < len(self.menuOptions):
+                if len(self.menuOptions[selectedIndex]) < 3:
+                    self.menuOptions[selectedIndex][1]() # Run the callback of the menu option
+                else:
+                    self.menuOptions[selectedIndex][1](self.menuOptions[selectedIndex][2]) # Run the callback of the menu option with the arg set in it's option
             else:
                 print("The input isn't a valid option!\n\n")
                 self.render()
@@ -301,7 +304,7 @@ class MainScreen(View):
         print("Welcome to the Public Library System.")
         print()
         
-        Menu([("List book titles", self.drawBookTitles), ("About", self.about)])
+        Menu([("List book titles", self.drawBookTitles), ("Debug Menu", self.debug, "test")])
 
     def drawBookTitles(self):
         cls()
@@ -309,9 +312,9 @@ class MainScreen(View):
             print(book.title)
             pass
 
-    def about(self):
+    def debug(self, arg):
         cls()
-        print("It works!")
+        print(f"It works! {arg}")
 
 
 mainScreen = MainScreen("Main Menu")
