@@ -386,6 +386,11 @@ class View:
         print()
 
 class MainScreen(View):
+    currentUser: Person
+
+    def setCurrentUser(self, user):
+        self.currentUser = user
+
     def render(self):
         super().render()
         print("Welcome to the Public Library System.")
