@@ -13,8 +13,9 @@ Fase 2
 - Removing books ✔
 
 Fase 3
-- Account creation
-- Account permission
+- Account creation ✔
+- Account login
+- Account permission checks
 - Restrict book editing to libarian
 
 Fase 4
@@ -30,6 +31,7 @@ import typing # For type annotation
 import sqlite3
 import json
 import os
+import re #RegEx
 
 
 # Simple function to clear the console window
@@ -49,10 +51,13 @@ class Person:
     zipCode: str
 
     emailAddress: str
-    telephoneNumber = 0000000000 #int 10 digits
+    telephoneNumber = "0000000000"
 
-    def __init__(self, username, givenName, surname, streetAddress, city, zipCode, emailAddress, telephoneNumber = 0000000000, nameSet = "Dutch"):
+    permType = "Subscriber"
+
+    def __init__(self, username, password, givenName, surname, streetAddress, city, zipCode, emailAddress, telephoneNumber = "0000000000", nameSet = "Dutch", permType = "Subscriber"):
         self.username = username
+        self.password = password
 
         self.givenName = givenName
         self.surname = surname
@@ -65,11 +70,16 @@ class Person:
         self.emailAddress = emailAddress
         self.telephoneNumber = telephoneNumber
 
-class Libearian(Person):
-    pass
+        self.permType = permType
 
-class Subscriber(Person):
-    pass
+    def __eq__(self, other):
+        if isinstance(other, self.__class__):
+            return self.username == other.username
+        else:
+            return False
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
 
 class Book:
     isbn = 0000000000000 #int 13 digits
@@ -208,9 +218,28 @@ class DataStore:
                 PRIMARY KEY(isbn)
             )
         ''')
+
+        self.cur.execute('''
+            CREATE TABLE IF NOT EXISTS Users (
+                id              INTEGER PRIMARY KEY AUTOINCREMENT,
+                username	    TEXT UNIQUE,
+                password	    TEXT,
+                givenName	    TEXT,
+                surname	        TEXT,
+                nameSet	        TEXT,
+                streetAddress	TEXT,
+                city	        TEXT,
+                zipCode	        TEXT,
+                emailAddress	TEXT,
+                telephoneNumber	TEXT,
+                permType    	TEXT
+            );
+        ''')
+
         self.db.commit()
 
         self.books = self.getBooks()
+        self.persons = self.getPersons()
         
     def __del__(self):
         self.db.close()
@@ -223,11 +252,19 @@ class DataStore:
 
         return books
 
+    def getPersons(self):
+        persons = []
+
+        for row in self.db.execute('SELECT * FROM Users'):
+            persons.append(Person(row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8], row[9], row[10]))
+
+        return persons
+
     '''
         Saves an instance of a book class to the Database
         Checks for duplicates
     '''
-    def addBook(self, book):
+    def addBook(self, book: Book):
         if not book in self.books:
             self.cur.execute('''
                 INSERT INTO Books (isbn, title, author, country, language, pages, year, link, imgLink) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
@@ -243,12 +280,36 @@ class DataStore:
     '''
         Deletes a book from the Database by ISBN
     '''
-    def deleteBook(self, book):
+    def deleteBook(self, book: Book):
         self.cur.execute('DELETE FROM Books WHERE isbn = ?;', (str(book.isbn)))
 
         self.db.commit()
 
         self.books.remove(book)
+
+    '''
+        Saves an instance of a person class to the Database
+        Checks for duplicates
+    '''
+    def addPerson(self, person: Person):
+        if not person in self.persons:
+            self.cur.execute('''
+                INSERT INTO Users (username, password, givenName, surname, nameSet, streetAddress, city, zipCode, emailAddress, telephoneNumber, permType) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+            ''', (person.username, person.password, person.givenName, person.surname, person.nameSet, person.streetAddress, person.city, person.zipCode, person.emailAddress, person.telephoneNumber, person.permType))
+
+            self.db.commit()
+
+            self.persons.append(person)
+            return True
+        else:
+            return False
+
+    def usernameInUse(self, username) -> bool:
+        for person in self.persons:
+            if person.username == username:
+                return True
+        return False
+
 
 '''
     Globals
@@ -281,7 +342,7 @@ class Menu:
         print("\nSelect an option by entering it's number and pressing return.")
         selectedIndex = input()
 
-        print("\033[A                             \033[A")
+        print("\033[A                             \033[A") #Remove user input from terminal
         
         selectedIndex = int(selectedIndex) if selectedIndex.isdigit() else None
         if selectedIndex != None:
@@ -329,8 +390,9 @@ class MainScreen(View):
         super().render()
         print("Welcome to the Public Library System.")
         print()
-        
+
         Menu([
+            ("Register Account", self.registerAccount),
             ("List book titles", self.drawBookTitles), 
             ("Debug Menu", self.debug, "test"),
             ("Exit", exit),
@@ -345,6 +407,8 @@ class MainScreen(View):
         bookMenuOptions.append(("Return to Main Menu", self.render))
         Menu(bookMenuOptions)
         
+    def registerAccount(self):
+        AccountCreation("Account Creation")
 
     def debug(self, arg):
         cls()
@@ -355,9 +419,100 @@ class AccountCreation(View):
     def render(self):
         super().render()
 
+        print("Please fill in your username:")
+        enteredUsername: str = input()
+        while enteredUsername == "":
+            print("\nUsername can not be empty!")
+            print("Please fill in your username:")
+            enteredUsername = input()
+        while dataStore.usernameInUse(enteredUsername):
+            print("\nUsername already in use!")
+            print("Please fill in your username:")
+            enteredUsername = input()
+            
+
+        print("Please fill in your password:")
+        enteredPassword: str = input()
+        print("\033[A                             \033[A") #Remove user input from terminal
+        while enteredPassword == "":
+            print("\nPassword can not be empty!")
+            print("Please fill  your password:")
+            enteredPassword = input()
+            print("\033[A                             \033[A") #Remove user input from terminal
+
+
+        print("Please fill in your first name: ")
+        enteredGivenName: str = input()
+        while enteredGivenName == "":
+            print("\nYour first name can not be empty!")
+            print("Please fill in your first name: ")
+            enteredGivenName = input()
+
+
+        print("Please fill in your surname: ")
+        enteredSurname: str = input()
+        while enteredSurname == "":
+            print("\nYour surname can not be empty!")
+            print("Please fill in your surname: ")
+            enteredSurname = input()
+
+
+        print("Please fill in your street adress: ")
+        enteredStreetAddress: str = input()
+        while enteredStreetAddress == "":
+            print("\nYour street adress can not be empty!")
+            print("Please fill in your street adress: ")
+            enteredStreetAddress = input()
+        
+
+        print("Please fill in your city: ")
+        enteredCity: str = input()
+        while enteredCity == "":
+            print("\n Your city can not be empty!")
+            print("Please fill in your city: ")
+            enteredCity = input()
+
+
+        print("Please fill in your zip code: ")
+        enteredZipCode: str = input()
+        while enteredZipCode == "":
+            print("\nYour zip code can not be empty!")
+            print("Please fill in your zip code: ")
+            enteredZipCode = input()
+
+
+        print("Please enter your email adress: ")
+        enteredEmailAddress: str = input()
+        while not self.isEmailValid(enteredEmailAddress):
+            print("\nThis email adress is not valid!")
+            print("Please fill in your email adress:")
+            enteredEmailAddress = input()
+
+
+        print("Please fill in your phone number (optional): ")
+        enteredTelephoneNumber: str = input()
+        
+        while not self.isPhoneValid(enteredTelephoneNumber) and enteredTelephoneNumber != "":
+            print("\nThis phone number is not valid!")
+            print("Please fill in your phone number: ")
+            enteredTelephoneNumber = input()
+            
+        person = Person(enteredUsername, enteredPassword, enteredGivenName, enteredSurname, enteredStreetAddress, enteredCity, enteredZipCode, enteredEmailAddress, enteredTelephoneNumber, "Dutch")
+
+        dataStore.addPerson(person)
+
+    def isEmailValid(self, email) -> bool:
+        pattern = re.compile("(?:[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*|\"(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21\x23-\x5b\x5d-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])*\")@(?:(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?|\[(?:(?:(2(5[0-5]|[0-4][0-9])|1[0-9][0-9]|[1-9]?[0-9]))\.){3}(?:(2(5[0-5]|[0-4][0-9])|1[0-9][0-9]|[1-9]?[0-9])|[a-z0-9-]*[a-z0-9]:(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21-\x5a\x53-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])+)\])", re.IGNORECASE)
+        return pattern.match(email) is not None
+
+    def isPhoneValid(self, number) -> bool: 
+        pattern = re.compile("^[\dA-Z]{3}-[\dA-Z]{3}-[\dA-Z]{4}$", re.IGNORECASE)
+        return pattern.match(number) is not None
+
+'''
+    Initialize Main UI
+'''
 mainScreen = MainScreen("Main Menu")
-
-
 
 
 '''
