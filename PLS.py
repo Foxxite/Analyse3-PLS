@@ -14,7 +14,7 @@ Fase 2
 
 Fase 3
 - Account creation ✔
-- Account login
+- Account login ✔
 - Account permission checks
 - Restrict book editing to libarian
 
@@ -305,10 +305,14 @@ class DataStore:
             return False
 
     def usernameInUse(self, username) -> bool:
+        return self.getPersonByUsername(username) != None
+
+    def getPersonByUsername(self, username) -> Person:
         for person in self.persons:
             if person.username == username:
-                return True
-        return False
+                return person
+        return None
+
 
 
 '''
@@ -386,7 +390,7 @@ class View:
         print()
 
 class MainScreen(View):
-    currentUser: Person
+    currentUser: Person = None
 
     def setCurrentUser(self, user):
         self.currentUser = user
@@ -394,10 +398,15 @@ class MainScreen(View):
     def render(self):
         super().render()
         print("Welcome to the Public Library System.")
+        
+        if self.currentUser != None:
+            print(f"{self.currentUser.username}")
+
         print()
 
         Menu([
             ("Register Account", self.registerAccount),
+            ("Logon", self.logIn ),
             ("List book titles", self.drawBookTitles), 
             ("Debug Menu", self.debug, "test"),
             ("Exit", exit),
@@ -414,6 +423,9 @@ class MainScreen(View):
         
     def registerAccount(self):
         AccountCreation("Account Creation")
+        
+    def logIn(self):
+        Login("Logon", self)
 
     def debug(self, arg):
         cls()
@@ -513,6 +525,65 @@ class AccountCreation(View):
     def isPhoneValid(self, number) -> bool: 
         pattern = re.compile("^[\dA-Z]{3}-[\dA-Z]{3}-[\dA-Z]{4}$", re.IGNORECASE)
         return pattern.match(number) is not None
+
+
+'''
+Stap 1: Maak een view waarmee je kan inloggen ✔
+Stap 2: Pas de datastore aan zodat je een user bij username kan pakken ✔
+Stap 3: Verifieer in het inlogview het wachtwoord ✔
+Stap 4: Voeg in de mainview een menuoptie om de inlogview aan te roepen met een referentie naar mainview ✔
+Stap 5: Als alles qua username en password klopt, gebruik de referentie naar de mainview om de current user te zetten
+Stap 6: Kijk of alles werkt
+Stap 7: Zo niet roep Dimitri even
+
+'''
+class Login(View):
+    mainView: MainScreen
+
+    def __init__(self, title, mainView, subTitle = "", permLevel = "Subscriber"):
+        self.mainView = mainView
+        super().__init__(title, subTitle=subTitle, permLevel=permLevel)
+
+    def render(self):
+        super().render()
+        
+        print("Please fill in your username:")
+        enteredUsername: str = input()
+        while enteredUsername == "":
+            print("\nUsername can not be empty!")
+            print("Please fill in your username:")
+            enteredUsername = input()
+        while not dataStore.usernameInUse(enteredUsername):
+            print("\nUnknown username!")
+            print("Please fill in your username:")
+            enteredUsername = input()
+            
+        person = dataStore.getPersonByUsername(enteredUsername)
+
+        print("Please fill in your password:")
+        enteredPassword: str = input()
+        print("\033[A                             \033[A") #Remove user input from terminal
+        while enteredPassword == "":
+            print("\nPassword can not be empty!")
+            print("Please fill  your password:")
+            enteredPassword = input()
+            print("\033[A                             \033[A") #Remove user input from terminal
+
+        triesLeft = 3
+        while enteredPassword != person.password and triesLeft > 0:
+            print(f"\nPassword doesn't match! ({triesLeft} attempts left)")
+            print("Please fill  your password:")
+            enteredPassword = input()
+            print("\033[A                             \033[A") 
+            triesLeft = triesLeft - 1
+
+        if triesLeft <= 0:
+            print("Max login attempts reached, quitting...")
+            exit()
+
+        # Set the current user and return to the main view
+        self.mainView.setCurrentUser(person)
+        self.mainView.render()
 
 '''
     Initialize Main UI
