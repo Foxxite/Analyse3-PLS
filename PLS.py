@@ -39,6 +39,8 @@ def cls():
     os.system('cls' if os.name=='nt' else 'clear')
 
 class Person:
+    id: int
+
     username: str
     password: str
     
@@ -129,10 +131,16 @@ class Book:
         print(f"Year:       {self.year}")
         print(f"Website:    {self.link}")
         print(f"Image:      {self.imageLink}")
+        
+        print()
 
-        print("\nPress return to return the booklist...")
-        input()
-        returnFunction()
+        menuOptions = [
+            ("Loan Book", loanAdministration.addLoan, self),
+            ("Return to book list", returnFunction)
+        ] 
+        Menu(menuOptions)
+
+        
 
 
 class Catalog:
@@ -181,21 +189,24 @@ class LoanAdministration:
     loans = [] #List of Loan
     
     def getLoansByUser(self):
-        return loans
+        return self.loans
         
-
-    def addLoan(self):
-        pass
+    def addLoan(self, book):
+        loan = LoanItem(currentUser, book)
+        dataStore.addLoan(loan)
+        self.loans.append(loan)
     
     def removeLoan(self):
         pass
 
 
 class LoanItem():
-    book = None #Book
-    person = None #Person
+    book: Book = None #Book
+    user: Person = None #Person
 
-    pass
+    def __init__(self, user, book):
+        self.user = user
+        self.book = book
 
 
 class DataStore:
@@ -247,9 +258,9 @@ class DataStore:
             CREATE TABLE IF NOT EXISTS Loans (
                 id      INTEGER PRIMARY KEY AUTOINCREMENT,
                 book	INTEGER,
-                user	INTEGER,
+                user	TEXT,
 
-                FOREIGN KEY(user) REFERENCES Users(id),
+                FOREIGN KEY(user) REFERENCES Users(username),
                 FOREIGN KEY(book) REFERENCES Books(isbn)
             );
         ''')
@@ -292,8 +303,8 @@ class DataStore:
     def addBook(self, book: Book):
         if not book in self.books:
             self.cur.execute('''
-                INSERT INTO Books (isbn, title, author, country, language, pages, year, link, imgLink) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
-            ''', (book.isbn, book.title, book.author, book.country, book.language, book.pages, book.year, book.link, book.imageLink))
+                                INSERT INTO Books (isbn, title, author, country, language, pages, year, link, imgLink) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
+                            ''', (book.isbn, book.title, book.author, book.country, book.language, book.pages, book.year, book.link, book.imageLink))
 
             self.db.commit()
 
@@ -302,6 +313,16 @@ class DataStore:
         else:
             return False
 
+    def addLoan(self, loan: LoanItem):
+        self.cur.execute('''
+            INSERT INTO Loans (user, book) VALUES (?, ?);
+            ''', (loan.user.username, loan.book.isbn))
+
+        self.db.commit()
+
+        self.loans.append(loan)
+        
+    
     '''
         Deletes a book from the Database by ISBN
     '''
@@ -343,12 +364,13 @@ class DataStore:
 '''
     Globals
 '''
-dataStore = DataStore() #DataStore
-books = dataStore.getBooks() #List of Book
+dataStore: DataStore = DataStore() #DataStore
+books: typing.List[Book] = dataStore.getBooks() #List of Book
 
-catalog = Catalog(books)
-loans = LoanAdministration()
+catalog: Catalog = Catalog(books)
+loanAdministration: LoanAdministration = LoanAdministration()
 
+currentUser: Person = None
 
 
 '''
@@ -420,23 +442,22 @@ class View:
 
 
 class MainScreen(View):
-    currentUser: Person = None
-
     def setCurrentUser(self, user):
-        self.currentUser = user
+        global currentUser
+        currentUser = user
 
     def render(self):
         super().render()
 
-        if self.currentUser != None:
-            print(f"Welcome {self.currentUser.givenName} {self.currentUser.surname} ({self.currentUser.permType}) to the Public Library System. ")
+        if currentUser != None:
+            print(f"Welcome {currentUser.givenName} {currentUser.surname} ({currentUser.permType}) to the Public Library System. ")
         else:
             print("Welcome to the Public Library System.")
         print()
 
         menuOptions = None
 
-        if self.currentUser == None:
+        if currentUser == None:
             menuOptions = [
                 ("Register Account", self.registerAccount),
                 ("Logon", self.logIn ),
@@ -449,7 +470,7 @@ class MainScreen(View):
                 ("Debug Menu", self.debug, "test"),
                 ("Exit", exit),
             ]
-            if(self.currentUser.permType == "Libarian"):
+            if(currentUser.permType == "Libarian"):
                 menuOptions.insert(0, ("Add Book", self.addBook))
                 menuOptions.insert(1, ("Import Books", self.importBooks))
                 menuOptions.insert(2, ("Import Users", self.importUsers))
@@ -477,7 +498,7 @@ class MainScreen(View):
         print(f"It works! {arg}")
 
     def addBook(self):
-        print("Not implemented!")
+        AddBook("Adding a book", self)
 
     def importBooks(self):
         print("Not implemented!")
@@ -510,7 +531,7 @@ class AccountCreation(View):
         print("\033[A                             \033[A") #Remove user input from terminal
         while enteredPassword == "":
             print("\nPassword can not be empty!")
-            print("Please fill  your password:")
+            print("Please fill in your password:")
             enteredPassword = input()
             print("\033[A                             \033[A") #Remove user input from terminal
 
@@ -634,10 +655,90 @@ class Login(View):
 
 
 class AddBook(View):
-    def render():
+    mainView = None
+
+    def __init__(self, title, mainView, subTitle = "", permLevel = ""):
+        super().__init__(title, subTitle=subTitle, permLevel=permLevel)
+        self.mainView = mainView
+
+    def render(self):
         super().render()
 
-        
+        print("Enter the books ISBN:")
+        enteredISBN = input()
+        enteredISBN = int(enteredISBN) if enteredISBN.isdigit() else None
+        while enteredISBN == None and len(str(enteredISBN)) < 13:
+            print("ISBN can not be empty and has to be a number containing 13 digits!")
+            print("Enter the books ISBN:")
+            enteredISBN = input()
+            enteredISBN = int(enteredISBN) if enteredISBN.isdigit() else None
+            
+        print("Enter the books title:")
+        enteredTitle = input()
+        while enteredTitle == "":
+            print("The title can not be empty!")
+            print("Enter the books title:")
+            enteredTitle = input()
+
+        print("Enter the name of the books author:")
+        enteredAuthor = input()
+        while enteredAuthor == "":
+            print("The author can not be empty!")
+            print("Enter the name of the books author:")
+            enteredAuthor = input()
+
+        print("Enter the country the book was published in:")
+        enteredCountry = input()
+        while enteredCountry == "":
+            print("The country can not be empty!")
+            print("Enter the country the book was published in:")
+            enteredCountry = input()
+
+        print("Enter the language the book was written in:")
+        enteredLanguage = input()
+        while enteredLanguage == "":
+            print("The language can not be empty!")
+            print("Enter the language the book was written in:")
+            enteredLanguage = input()
+
+        print("Enter the amount of pages the book has:")
+        enteredPages = input()
+        enteredPages = int(enteredPages) if enteredPages.isdigit() else None
+        while enteredPages == None:
+            print("The amount of pages can not be empty and has to be a number!")
+            print("Enter the amount of pages the book has:")
+            enteredPages = input()
+            enteredPages = int(enteredPages) if enteredPages.isdigit() else None
+
+        print("Enter the year the book was published:")
+        enteredYear = input()
+        enteredYear = int(enteredYear) if enteredYear.isdigit() else None
+        while enteredYear == None:
+            print("The year can not be empty and has to be a number!")
+            print("Enter the year the book was published:")
+            enteredYear = input()
+            enteredYear = int(enteredYear) if enteredYear.isdigit() else None
+
+        print("Enter a link to the books description:")
+        enteredLink = input()
+        while enteredLink == "":
+            print("The link can not be empty!")
+            print("Enter a link to the books description:")
+            enteredLink = input()
+
+        print("Enter a link to the books image:")
+        enteredImgLink = input()
+        while enteredImgLink == "":
+            print("The image link can not be empty!")
+            print("Enter a link to the books image:")
+            enteredImgLink = input()
+
+        catalog.addBook(enteredISBN, enteredTitle, enteredAuthor, enteredCountry, enteredLanguage, enteredPages, enteredYear, enteredLink, enteredImgLink)
+
+        print("Book has been added. Press return to return to the main menu.")
+        input()
+
+        self.mainView.render()
 
 '''
     Initialize Main UI
