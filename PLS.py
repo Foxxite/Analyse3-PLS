@@ -404,13 +404,23 @@ class MainScreen(View):
 
         print()
 
-        Menu([
-            ("Register Account", self.registerAccount),
-            ("Logon", self.logIn ),
-            ("List book titles", self.drawBookTitles), 
-            ("Debug Menu", self.debug, "test"),
-            ("Exit", exit),
-        ])
+        menuOptions = None
+
+        if self.currentUser == None:
+            menuOptions = [
+                ("Register Account", self.registerAccount),
+                ("Logon", self.logIn ),
+                ("Debug Menu", self.debug, "test"),
+                ("Exit", exit),
+            ]
+        else:
+            menuOptions = [
+                ("List book titles", self.drawBookTitles),
+                ("Debug Menu", self.debug, "test"),
+                ("Exit", exit),
+            ]
+
+        Menu(menuOptions)
 
     def drawBookTitles(self):
         bookMenuOptions = []
@@ -526,17 +536,6 @@ class AccountCreation(View):
         pattern = re.compile("^[\dA-Z]{3}-[\dA-Z]{3}-[\dA-Z]{4}$", re.IGNORECASE)
         return pattern.match(number) is not None
 
-
-'''
-Stap 1: Maak een view waarmee je kan inloggen ✔
-Stap 2: Pas de datastore aan zodat je een user bij username kan pakken ✔
-Stap 3: Verifieer in het inlogview het wachtwoord ✔
-Stap 4: Voeg in de mainview een menuoptie om de inlogview aan te roepen met een referentie naar mainview ✔
-Stap 5: Als alles qua username en password klopt, gebruik de referentie naar de mainview om de current user te zetten
-Stap 6: Kijk of alles werkt
-Stap 7: Zo niet roep Dimitri even
-
-'''
 class Login(View):
     mainView: MainScreen
 
