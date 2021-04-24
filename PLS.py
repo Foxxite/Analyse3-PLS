@@ -20,7 +20,7 @@ Fase 3
 
 Fase 4
 - View loans
-- Create loans
+- Create loans ✔
 - Remove loans (libarian only)
 
 Fase 5
@@ -32,6 +32,7 @@ import sqlite3
 import json
 import os
 import re #RegEx
+import random
 
 
 # Simple function to clear the console window
@@ -144,7 +145,7 @@ class Book:
 
 
 class Catalog:
-    books = [] #List of Book
+    books: typing.List[Book] = [] #List of Book
 
     def __init__(self, booksFromDatastore):
         self.books = booksFromDatastore
@@ -482,7 +483,7 @@ class MainScreen(View):
         bookMenuOptions = []
         
         for book in catalog.getAvailableBooks():
-            bookMenuOptions.append((book.title, book.viewInfo, self.drawBookTitles))
+            bookMenuOptions.append((f"{book.title} - {book.author}", book.viewInfo, self.drawBookTitles))
             
         bookMenuOptions.append(("Return to Main Menu", self.render))
         Menu(bookMenuOptions)
@@ -501,7 +502,7 @@ class MainScreen(View):
         AddBook("Adding a book", self)
 
     def importBooks(self):
-        print("Not implemented!")
+        ImportBooks("Importing books from file")
 
     def importUsers(self):
         print("Not implemented!")
@@ -740,6 +741,55 @@ class AddBook(View):
 
         self.mainView.render()
 
+
+class ImportBooks(View):
+    def render(self):
+        super().render()
+
+        print("Enter the path to the JSON file containing the books:")
+        enteredPath = input()
+        while enteredPath == "":
+            print("The file path can not be empty!")
+            print("Enter the path to the JSON file containing the books:")
+            enteredPath = input()
+
+        with open(enteredPath) as json_file:
+            data = json.load(json_file)
+            
+            for book in data:
+                if 'isbn' not in book:
+                    print("!! No ISBN, generating a random one...")
+                    book['isbn'] = random.randint(1111111111111, 9999999999999)
+
+                    while self.bookInSystem(book['isbn'], book['title']):
+                        book['isbn'] = random.randint(1111111111111, 99999999)
+
+                if not self.bookInSystem(book['isbn'], book['title']):
+                    catalog.addBook(book['isbn'], book['title'], book['author'], book['country'], book['language'], book['pages'], book['year'], book['link'], book['imageLink'])
+                    print(f"Book {book['title']} - {book['isbn']} saved to system. ")
+                else:
+                    print(f"Book {book['title']} - {book['isbn']} already in system, skipping... ")
+
+    def bookInSystem(self, isbn, title):
+        for book in catalog.books:
+            if book.isbn == isbn or book.title == title:
+                return True
+        
+        return False
+                
+class LoanList(View):
+    def render(self):
+        super().render()
+        
+        loans = loanAdministration.getLoansByUser(currentUser)
+        
+        for x in range(len(loans)):
+            pass
+
+        #print(f"Your loans are {loans}\nPress enter to return to the main menu.")
+        input()
+        
+        self.mainView.render()
 '''
     Initialize Main UI
 '''
