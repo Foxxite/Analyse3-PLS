@@ -19,9 +19,9 @@ Fase 3
 - Restrict book editing to libarian
 
 Fase 4
-- View loons
-- Create loons
-- Remove loons
+- View loans
+- Create loans
+- Remove loans (libarian only)
 
 Fase 5
 - Finish everything
@@ -81,6 +81,7 @@ class Person:
     def __ne__(self, other):
         return not self.__eq__(other)
 
+
 class Book:
     isbn = 0000000000000 #int 13 digits
 
@@ -132,6 +133,8 @@ class Book:
         print("\nPress return to return the booklist...")
         input()
         returnFunction()
+
+
 class Catalog:
     books = [] #List of Book
 
@@ -173,17 +176,20 @@ class Catalog:
     def getAvailableBooks(self):
         return books
 
+
 class LoanAdministration:
     loans = [] #List of Loan
     
-    def getLoansByUsers(self):
-        pass
-    
+    def getLoansByUser(self):
+        return loans
+        
+
     def addLoan(self):
         pass
     
     def removeLoan(self):
         pass
+
 
 class LoanItem():
     book = None #Book
@@ -195,6 +201,7 @@ class LoanItem():
 class DataStore:
     books = [] #List of Books
     persons = [] #List of Persons
+    loans = []  #List of loans
 
     db = None #SQLite Connection
     cur = None #SQLite Cursor
@@ -236,6 +243,17 @@ class DataStore:
             );
         ''')
 
+        self.cur.execute('''
+            CREATE TABLE IF NOT EXISTS Loans (
+                id      INTEGER PRIMARY KEY AUTOINCREMENT,
+                book	INTEGER,
+                user	INTEGER,
+
+                FOREIGN KEY(user) REFERENCES Users(id),
+                FOREIGN KEY(book) REFERENCES Books(isbn)
+            );
+        ''')
+
         self.db.commit()
 
         self.books = self.getBooks()
@@ -260,6 +278,13 @@ class DataStore:
 
         return persons
 
+    def getLoans(self):
+        loans = []
+        
+        for row in self.db.execute('SELECT * FROM Loans'):
+            loans.append(LoanItem(row[1], row[2], row[3]))
+
+        return loans
     '''
         Saves an instance of a book class to the Database
         Checks for duplicates
@@ -321,7 +346,10 @@ class DataStore:
 dataStore = DataStore() #DataStore
 books = dataStore.getBooks() #List of Book
 
-catalog = Catalog(books) 
+catalog = Catalog(books)
+loans = LoanAdministration()
+
+
 
 '''
     UI Classes
@@ -364,6 +392,7 @@ class Menu:
             print("The input isn't a number!\n\n")
             self.render()
 
+
 class View:
     title = ""
     subTitle = ""
@@ -388,6 +417,7 @@ class View:
         else:
             print(f'========== {self.title} ==========')
         print()
+
 
 class MainScreen(View):
     currentUser: Person = None
@@ -457,6 +487,7 @@ class MainScreen(View):
 
     def createBackup(self):
         print("Not implemented!")
+
 
 class AccountCreation(View):
     def render(self):
@@ -552,6 +583,7 @@ class AccountCreation(View):
         pattern = re.compile("^[\dA-Z]{3}-[\dA-Z]{3}-[\dA-Z]{4}$", re.IGNORECASE)
         return pattern.match(number) is not None
 
+
 class Login(View):
     mainView: MainScreen
 
@@ -599,6 +631,13 @@ class Login(View):
         # Set the current user and return to the main view
         self.mainView.setCurrentUser(person)
         self.mainView.render()
+
+
+class AddBook(View):
+    def render():
+        super().render()
+
+        
 
 '''
     Initialize Main UI
