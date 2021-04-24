@@ -15,7 +15,7 @@ Fase 2
 Fase 3
 - Account creation ✔
 - Account login ✔
-- Account permission checks
+- Account permission checks ✔
 - Restrict book editing to libarian
 
 Fase 4
@@ -256,7 +256,7 @@ class DataStore:
         persons = []
 
         for row in self.db.execute('SELECT * FROM Users'):
-            persons.append(Person(row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8], row[9], row[10]))
+            persons.append(Person(row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8], row[9], row[10], row[11]))
 
         return persons
 
@@ -397,11 +397,11 @@ class MainScreen(View):
 
     def render(self):
         super().render()
-        print("Welcome to the Public Library System.")
-        
-        if self.currentUser != None:
-            print(f"{self.currentUser.username}")
 
+        if self.currentUser != None:
+            print(f"Welcome {self.currentUser.givenName} {self.currentUser.surname} ({self.currentUser.permType}) to the Public Library System. ")
+        else:
+            print("Welcome to the Public Library System.")
         print()
 
         menuOptions = None
@@ -419,6 +419,11 @@ class MainScreen(View):
                 ("Debug Menu", self.debug, "test"),
                 ("Exit", exit),
             ]
+            if(self.currentUser.permType == "Libarian"):
+                menuOptions.insert(0, ("Add Book", self.addBook))
+                menuOptions.insert(1, ("Import Books", self.importBooks))
+                menuOptions.insert(2, ("Import Users", self.importUsers))
+                menuOptions.insert(3, ("Create Backup", self.createBackup))
 
         Menu(menuOptions)
 
@@ -441,6 +446,17 @@ class MainScreen(View):
         cls()
         print(f"It works! {arg}")
 
+    def addBook(self):
+        print("Not implemented!")
+
+    def importBooks(self):
+        print("Not implemented!")
+
+    def importUsers(self):
+        print("Not implemented!")
+
+    def createBackup(self):
+        print("Not implemented!")
 
 class AccountCreation(View):
     def render(self):
