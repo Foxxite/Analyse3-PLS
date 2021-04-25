@@ -25,7 +25,7 @@ Fase 4
 
 Fase 5
 - View Account Info ✔
-- Delete accounts (Librarian only) 
+- Delete accounts (Librarian only) ✔
 - Delete books (Librarian only) 
 '''
 
@@ -398,6 +398,14 @@ class DataStore:
                 return book
         return None
 
+    def deletePerson(self, person):
+        username = (person.username,)
+
+        self.cur.execute('DELETE FROM Users WHERE username = ?;', username)
+
+        self.db.commit()
+
+        self.persons.remove(person)
 
 '''
     Globals
@@ -563,7 +571,7 @@ class MainScreen(View):
         AccountInfo("Account Information")
 
     def deleteAccount(self):
-        AccountDelition
+        AccountDeletion("Account Deletion")
 
 class AccountCreation(View):
     def render(self):
@@ -815,6 +823,36 @@ class AddBook(View):
         self.mainView.render()
 
 
+class AccountDeletion(View):
+    def render(self):
+        super().render()
+
+        print("Enter the username of the account you want to delete:")
+        enteredUsername = input()
+
+        while enteredUsername == "":
+            print("The username can not be empty.")
+            print("Enter the username of the account you want to delete:")
+            enteredUsername = input()
+
+        user = dataStore.getPersonByUsername(enteredUsername)
+
+        if user != None:
+            print(f"Are you sure you want to delete the user {user.username}, {user.givenName} {user.surname} (Y/N)?")
+            shouldDelete = input()
+
+            if shouldDelete == "Y" or shouldDelete == "Yes" or shouldDelete == "y" or shouldDelete == "yes":
+                dataStore.deletePerson(user)
+                print("The user has been deleted. Press return to return to the main menu.")
+                input()
+            else:
+                print("Aborted. Press return to return to the main menu.")
+                input()
+        else:
+            print("No user by this username found!")
+            self.render()
+
+
 class ImportBooks(View):
     def render(self):
         super().render()
@@ -1014,7 +1052,7 @@ class RemoveLoans(View):
         allLoans = loanAdministration.loans
 
         for removeLoan in allLoans:
-            
+            loan
 
 
 '''
