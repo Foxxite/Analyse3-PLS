@@ -21,12 +21,12 @@ Fase 3
 Fase 4
 - View loans ✔
 - Create loans ✔
-- Remove loans (Librarian only)
+- Remove loans (Librarian only) ✔
 
 Fase 5
 - View Account Info ✔
 - Delete accounts (Librarian only) ✔
-- Delete books (Librarian only) 
+- Delete books (Librarian only) ✔
 '''
 
 import typing # For type annotation
@@ -360,11 +360,15 @@ class DataStore:
         Deletes a book from the Database by ISBN
     '''
     def deleteBook(self, book: Book):
-        self.cur.execute('DELETE FROM Books WHERE isbn = ?;', (str(book.isbn)))
+        self.cur.execute('DELETE FROM Books WHERE isbn = ?;', (str(book.isbn),))
+        self.cur.execute('DELETE FROM Loans WHERE book = ?;', (str(book.isbn),))
 
         self.db.commit()
 
         self.books.remove(book)
+
+        global catalog
+        catalog = Catalog(self.books)
 
     '''
         Saves an instance of a person class to the Database
@@ -402,10 +406,22 @@ class DataStore:
         username = (person.username,)
 
         self.cur.execute('DELETE FROM Users WHERE username = ?;', username)
+        self.cur.execute('DELETE FROM Loans WHERE user = ?;', username)
 
         self.db.commit()
 
         self.persons.remove(person)
+
+
+    def deleteLoan(self, loan):
+        self.cur.execute('DELETE FROM Loans WHERE user = ? AND book = ?;', (loan.user.username, loan.book.isbn))
+
+        self.db.commit()
+
+        self.loans.remove(loan)
+
+        global LoanAdministration
+        LoanAdministration = LoanAdministration(self.loans)
 
 '''
     Globals
@@ -523,8 +539,9 @@ class MainScreen(View):
                 menuOptions.insert(1, ("Import Books", self.importBooks))
                 menuOptions.insert(2, ("Import Users", self.importUsers))
                 menuOptions.insert(3, ("Create Backup", self.createBackup))
-                menuOptions.insert(4, ("Remove loans", self.removeLoans))
-                menuOptions.insert(5, ("Delete Account", self.deleteAccount))
+                menuOptions.insert(4, ("Remove A Loan", self.removeLoans))
+                menuOptions.insert(5, ("Delete An Account", self.deleteAccount))
+                menuOptions.insert(6, ("Delete A Book", self.deleteBook))
 
         Menu(menuOptions)
 
@@ -565,13 +582,34 @@ class MainScreen(View):
         LoanList("My Loans")
     
     def removeLoans(self):
-        RemoveLoans("Remove loans from user")
+        loanMenuOptions = []
+        
+        for loan in loanAdministration.loans:
+            loanMenuOptions.append((f"{loan.user.givenName} {loan.user.surname} | {loan.book.isbn} {loan.book.title} {loan.book.author}", dataStore.deleteLoan, loan))
+            
+        loanMenuOptions.append(("Cancel", self.render))
+        Menu(loanMenuOptions)
+
+        print("Loan deleted! Press return to return to the main menu!")
+        input()
 
     def viewAccountInfo(self):
         AccountInfo("Account Information")
 
     def deleteAccount(self):
         AccountDeletion("Account Deletion")
+
+    def deleteBook(self):
+        bookMenuOptions = []
+        
+        for book in catalog.getAvailableBooks():
+            bookMenuOptions.append((f"{book.isbn} - {book.title} {book.author}", dataStore.deleteBook, book))
+            
+        bookMenuOptions.append(("Cancel", self.render))
+        Menu(bookMenuOptions)
+
+        print("Book deleted! Press return to return to the main menu!")
+        input()
 
 class AccountCreation(View):
     def render(self):
@@ -1041,18 +1079,6 @@ class LoanList(View):
 
         print("Press return to return to the main menu.")
         input()
-        
-        self.mainView.render()
-
-
-class RemoveLoans(View):
-    def render(self):
-        super().render()
-        
-        allLoans = loanAdministration.loans
-
-        for removeLoan in allLoans:
-            loan
 
 
 '''
