@@ -147,48 +147,6 @@ class Book:
         Menu(menuOptions)
 
 
-class Catalog:
-    books: typing.List[Book] = [] #List of Book
-
-    def __init__(self, booksFromDatastore):
-        self.books = booksFromDatastore
-    
-    def search(self):
-        pass
-
-    def advancedSearch(self):
-        pass
-    
-    '''
-        Adding a book
-
-        1) Take all information of the book as parameters
-        2) Create instance of Book class
-        3) Write book to database using the datastore global
-        4) Append book to the internal book list
-    '''
-    def addBook(self, isbn, title, author, country, language, pages, year, link, imageLink):
-        book = Book(isbn, title, author, country, language, pages, year, link, imageLink)
-        dataStore.addBook(book)
-        books.append(book)
-        
-    #verwijder boek
-    def removeBook(self, isbn):
-        book = None
-        for b in books:
-            if b.isbn == isbn:
-                book = b
-                break
-
-        if book != None:
-            books.remove(book)
-            dataStore.deleteBook(book)
-
-    # Krijg de lijst van alle beschikbare boeken
-    def getAvailableBooks(self):
-        return books
-
-
 class LoanItem:
     book: Book = None #Book
     user: Person = None #Person
@@ -420,8 +378,8 @@ class DataStore:
 
         self.loans.remove(loan)
 
-        global LoanAdministration
-        LoanAdministration = LoanAdministration(self.loans)
+        global loanAdministration
+        loanAdministration = LoanAdministration(self.loans)
 
 '''
     Globals
@@ -429,11 +387,58 @@ class DataStore:
 dataStore: DataStore = DataStore() #DataStore
 books: typing.List[Book] = dataStore.getBooks() #List of Book
 
-catalog: Catalog = Catalog(books)
 loanAdministration: LoanAdministration = LoanAdministration(dataStore.loans)
 
 currentUser: Person = None
 
+class Catalog:
+    books: typing.List[Book] = [] #List of Book
+
+    def __init__(self, booksFromDatastore):
+        self.books = booksFromDatastore
+    
+    def search(self):
+        pass
+
+    def advancedSearch(self):
+        pass
+    
+
+    def addBook(self, isbn, title, author, country, language, pages, year, link, imageLink):
+        book = Book(isbn, title, author, country, language, pages, year, link, imageLink)
+        dataStore.addBook(book)
+        books.append(book)
+        
+    #verwijder boek
+    def removeBook(self, isbn):
+        book = None
+        for b in books:
+            if b.isbn == isbn:
+                book = b
+                break
+
+        if book != None:
+            books.remove(book)
+            dataStore.deleteBook(book)
+
+    # Krijg de lijst van alle beschikbare boeken
+    def getAvailableBooks(self):
+        books = []
+
+        for book in self.books:
+            isAvailable = True
+            
+            for loan in loanAdministration.loans:
+                if loan.book == book:
+                    isAvailable = False
+                    break;
+            
+            if isAvailable:
+                books.append(book)
+
+        return books
+
+catalog: Catalog = Catalog(books)
 
 '''
     UI Classes
@@ -523,7 +528,7 @@ class MainScreen(View):
             menuOptions = [
                 ("Register Account", self.registerAccount),
                 ("Logon", self.logIn ),
-                ("Debug Menu", self.debug, "test"),
+                ("About", self.about),
                 ("Exit", exit),
             ]
         else:
@@ -531,7 +536,7 @@ class MainScreen(View):
                 ("List Book Titles", self.drawBookTitles),
                 ("List My Loans", self.listLoans),
                 ("View Account Info", self.viewAccountInfo),
-                ("Debug Menu", self.debug, "test"),
+                ("About", self.about),
                 ("Exit", exit),
             ]
             if(currentUser.permType == "Librarian"):
@@ -562,9 +567,11 @@ class MainScreen(View):
     def logIn(self):
         Login("Logon", self)
 
-    def debug(self, arg):
+    def about(self, arg):
         cls()
-        print(f"It works! {arg}")
+        print("PLS by 1007284, 0970671, 1008730")
+        print("\nPress return to return to the main menu!")
+        input()
 
     def addBook(self):
         AddBook("Adding a book", self)
