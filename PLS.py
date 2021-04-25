@@ -16,12 +16,12 @@ Fase 3
 - Account creation ✔
 - Account login ✔
 - Account permission checks ✔
-- Restrict book editing to libarian
+- Restrict book editing to Librarian ✔
 
 Fase 4
 - View loans
 - Create loans ✔
-- Remove loans (libarian only)
+- Remove loans (Librarian only)
 
 Fase 5
 - Finish everything
@@ -29,7 +29,10 @@ Fase 5
 
 import typing # For type annotation
 import sqlite3
+
 import json
+import csv
+
 import os
 import re #RegEx
 import random
@@ -201,7 +204,7 @@ class LoanAdministration:
         pass
 
 
-class LoanItem():
+class LoanItem:
     book: Book = None #Book
     user: Person = None #Person
 
@@ -211,9 +214,9 @@ class LoanItem():
 
 
 class DataStore:
-    books = [] #List of Books
-    persons = [] #List of Persons
-    loans = []  #List of loans
+    books: typing.List[Book] = [] #List of Books
+    persons: typing.List[Person] = [] #List of Persons
+    loans: typing.List[LoanItem] = []  #List of loans
 
     db = None #SQLite Connection
     cur = None #SQLite Cursor
@@ -286,7 +289,19 @@ class DataStore:
         persons = []
 
         for row in self.db.execute('SELECT * FROM Users'):
-            persons.append(Person(row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8], row[9], row[10], row[11]))
+            username = row[1]
+            password = row[2]
+            givenName = row[3]
+            surname = row[4]
+            nameSet = row[5]
+            streetAddress = row[6]
+            city = row[7]
+            zipCode = row[8]
+            emailAddress = row[9]
+            telephoneNumber = row[10]
+            permType = row[11]
+
+            persons.append(Person(username, password, givenName, surname, streetAddress, city, zipCode, emailAddress, telephoneNumber, nameSet, permType))
 
         return persons
 
@@ -467,17 +482,19 @@ class MainScreen(View):
             ]
         else:
             menuOptions = [
-                ("List book titles", self.drawBookTitles),
+                ("List Book Titles", self.drawBookTitles),
                 ("Debug Menu", self.debug, "test"),
                 ("Exit", exit),
             ]
-            if(currentUser.permType == "Libarian"):
+            if(currentUser.permType == "Librarian"):
                 menuOptions.insert(0, ("Add Book", self.addBook))
                 menuOptions.insert(1, ("Import Books", self.importBooks))
                 menuOptions.insert(2, ("Import Users", self.importUsers))
                 menuOptions.insert(3, ("Create Backup", self.createBackup))
 
         Menu(menuOptions)
+
+        self.render()
 
     def drawBookTitles(self):
         bookMenuOptions = []
@@ -505,10 +522,10 @@ class MainScreen(View):
         ImportBooks("Importing books from file")
 
     def importUsers(self):
-        print("Not implemented!")
+        ImportUsers("Importing users from file")
 
     def createBackup(self):
-        print("Not implemented!")
+        CreateBackup("Creating Backup")
 
 
 class AccountCreation(View):
@@ -770,26 +787,167 @@ class ImportBooks(View):
                 else:
                     print(f"Book {book['title']} - {book['isbn']} already in system, skipping... ")
 
+            print("All books have been added. Press return to return to the main menu.")
+            input()
+
     def bookInSystem(self, isbn, title):
         for book in catalog.books:
             if book.isbn == isbn or book.title == title:
                 return True
         
         return False
+
+
+class ImportUsers(View):
+    def render(self):
+        super().render()
+
+        print("Enter the path to the file (JSON or CSV) containing the users:")
+        enteredPath = input()
+        while enteredPath == "":
+            print("The file path can not be empty!")
+            print("Enter the path to the file (JSON or CSV) containing the users:")
+            enteredPath = input()
+
+        name, extension = os.path.splitext(enteredPath)
+
+        if extension == ".json":
+            with open(enteredPath) as json_file:
+                data = json.load(json_file)
+                self.importUserData(data)
+        elif extension == ".csv":
+            with open(enteredPath) as csvfile:
+                data = csv.DictReader(csvfile)
+                self.importUserData(data)
+
+    def importUserData(self, data):
+        for user in data:
+
+            username = ""
+            if 'Username' in user:
+                username = user['Username']
+            elif 'username' in user:
+                username = user['username']
+
+            if dataStore.usernameInUse(username):
+                print(f"Skipping {username}, user already in system!")
+            else:
+                password = ""
+                if 'Password' in user:
+                    password = user['Password']
+                elif 'password' in user:
+                    password = user['password']
+                else:
+                    print("No password set in backup file, using 'password' as password.")
+                    password = "password"
+
+                givenName = ""
+                if 'GivenName' in user:
+                    givenName = user['GivenName']
+                elif 'givenName' in user:
+                    givenName = user['givenName']
+
+                surname = ""
+                if 'Surname' in user:
+                    surname = user['Surname']
+                elif 'surname' in user:
+                    surname = user['surname']
+
+                streetAddress = ""
+                if 'StreetAddress' in user:
+                    streetAddress = user['StreetAddress']
+                elif 'streetAddress' in user:
+                    streetAddress = user['streetAddress']
+
+                city = ""
+                if 'City' in user:
+                    city = user['City']
+                elif 'city' in user:
+                    city = user['city']
+
+                zipCode = ""
+                if 'ZipCode' in user:
+                    zipCode = user['ZipCode']
+                elif 'zipCode' in user:
+                    zipCode = user['zipCode']
+
+                emailAddress = ""
+                if 'EmailAddress' in user:
+                    emailAddress = user['EmailAddress']
+                elif 'emailAddress' in user:
+                    emailAddress = user['emailAddress']
+
+                telephoneNumber = ""
+                if 'TelephoneNumber' in user:
+                    telephoneNumber = user['TelephoneNumber']
+                elif 'telephoneNumber' in user:
+                    telephoneNumber = user['telephoneNumber']
+
+                nameSet = ""
+                if 'NameSet' in user:
+                    nameSet = user['NameSet']
+                elif 'nameSet' in user:
+                    nameSet = user['nameSet']
+
+                permType = ""
+                if 'PermType' in user:
+                    permType = user['PermType']
+                elif 'permType' in user:
+                    permType = user['permType']
+                else:
+                    permType = "Subscriber"
+
+                person = Person(username, password, givenName, surname, streetAddress, city, zipCode, emailAddress, telephoneNumber, nameSet, permType)
                 
+                dataStore.addPerson(person)
+
+        print("All users have been added. Press return to return to the main menu.")
+        input()
+
+
+class CreateBackup(View):
+    def render(self):
+        super().render()
+
+        print("Exporting books to books.json...")
+        rawBooks = dataStore.books
+        books = []
+
+        for book in rawBooks:
+            books.append(book.__dict__)
+
+        jsonString = json.dumps(books)
+        jsonFile = open("books.json", "w")
+        jsonFile.write(jsonString)
+        jsonFile.close()
+
+        print("Exporting persons to persons.json...")
+        rawPersons = dataStore.persons
+        persons = []
+
+        for person in rawPersons:
+            persons.append(person.__dict__)
+
+        jsonString = json.dumps(persons)
+        jsonFile = open("persons.json", "w")
+        jsonFile.write(jsonString)
+        jsonFile.close()
+
 class LoanList(View):
     def render(self):
         super().render()
         
         loans = loanAdministration.getLoansByUser(currentUser)
         
-        for x in range(len(loans)):
-            pass
+        for loan in loans:
+            print(loan)
 
         #print(f"Your loans are {loans}\nPress enter to return to the main menu.")
         input()
         
         self.mainView.render()
+
+
 '''
     Initialize Main UI
 '''
