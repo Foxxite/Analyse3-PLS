@@ -19,12 +19,14 @@ Fase 3
 - Restrict book editing to Librarian ✔
 
 Fase 4
-- View loans
+- View loans ✔
 - Create loans ✔
 - Remove loans (Librarian only)
 
 Fase 5
-- Finish everything
+- View Account Info ✔
+- Delete accounts (Librarian only) 
+- Delete books (Librarian only) 
 '''
 
 import typing # For type annotation
@@ -144,8 +146,6 @@ class Book:
         ] 
         Menu(menuOptions)
 
-        
-
 
 class Catalog:
     books: typing.List[Book] = [] #List of Book
@@ -189,21 +189,6 @@ class Catalog:
         return books
 
 
-class LoanAdministration:
-    loans = [] #List of Loan
-    
-    def getLoansByUser(self):
-        return self.loans
-        
-    def addLoan(self, book):
-        loan = LoanItem(currentUser, book)
-        dataStore.addLoan(loan)
-        self.loans.append(loan)
-    
-    def removeLoan(self):
-        pass
-
-
 class LoanItem:
     book: Book = None #Book
     user: Person = None #Person
@@ -211,6 +196,31 @@ class LoanItem:
     def __init__(self, user, book):
         self.user = user
         self.book = book
+
+
+class LoanAdministration:
+    loans: typing.List[LoanItem] = [] #List of Loan
+    
+    def __init__(self, loans):
+        self.loans = loans
+
+    def getLoansByUser(self, user):
+        loansOfUser = []
+
+        for loan in self.loans:
+            if loan.user == user:
+                loansOfUser.append(loan)
+
+        return loansOfUser
+
+
+    def addLoan(self, book):
+        loan = LoanItem(currentUser, book)
+        dataStore.addLoan(loan)
+        self.loans.append(loan)
+    
+    def removeLoan(self):
+        pass
 
 
 class DataStore:
@@ -273,6 +283,7 @@ class DataStore:
 
         self.books = self.getBooks()
         self.persons = self.getPersons()
+        self.loans = self.getLoans()
         
     def __del__(self):
         self.db.close()
@@ -309,9 +320,14 @@ class DataStore:
         loans = []
         
         for row in self.db.execute('SELECT * FROM Loans'):
-            loans.append(LoanItem(row[1], row[2], row[3]))
+            user = self.getPersonByUsername(row[2])
+            book = self.getBookByISBN(row[1])
+
+            loan = LoanItem(user, book)
+            loans.append(loan)
 
         return loans
+        
     '''
         Saves an instance of a book class to the Database
         Checks for duplicates
@@ -328,6 +344,7 @@ class DataStore:
             return True
         else:
             return False
+
 
     def addLoan(self, loan: LoanItem):
         self.cur.execute('''
@@ -375,6 +392,11 @@ class DataStore:
                 return person
         return None
 
+    def getBookByISBN(self, isbn):
+        for book in self.books:
+            if book.isbn == isbn:
+                return book
+        return None
 
 
 '''
@@ -384,7 +406,7 @@ dataStore: DataStore = DataStore() #DataStore
 books: typing.List[Book] = dataStore.getBooks() #List of Book
 
 catalog: Catalog = Catalog(books)
-loanAdministration: LoanAdministration = LoanAdministration()
+loanAdministration: LoanAdministration = LoanAdministration(dataStore.loans)
 
 currentUser: Person = None
 
@@ -483,6 +505,8 @@ class MainScreen(View):
         else:
             menuOptions = [
                 ("List Book Titles", self.drawBookTitles),
+                ("List My Loans", self.listLoans),
+                ("View Account Info", self.viewAccountInfo),
                 ("Debug Menu", self.debug, "test"),
                 ("Exit", exit),
             ]
@@ -491,6 +515,8 @@ class MainScreen(View):
                 menuOptions.insert(1, ("Import Books", self.importBooks))
                 menuOptions.insert(2, ("Import Users", self.importUsers))
                 menuOptions.insert(3, ("Create Backup", self.createBackup))
+                menuOptions.insert(4, ("Remove loans", self.removeLoans))
+                menuOptions.insert(5, ("Delete Account", self.deleteAccount))
 
         Menu(menuOptions)
 
@@ -527,6 +553,17 @@ class MainScreen(View):
     def createBackup(self):
         CreateBackup("Creating Backup")
 
+    def listLoans(self):
+        LoanList("My Loans")
+    
+    def removeLoans(self):
+        RemoveLoans("Remove loans from user")
+
+    def viewAccountInfo(self):
+        AccountInfo("Account Information")
+
+    def deleteAccount(self):
+        AccountDelition
 
 class AccountCreation(View):
     def render(self):
@@ -621,6 +658,25 @@ class AccountCreation(View):
     def isPhoneValid(self, number) -> bool: 
         pattern = re.compile("^[\dA-Z]{3}-[\dA-Z]{3}-[\dA-Z]{4}$", re.IGNORECASE)
         return pattern.match(number) is not None
+
+
+class AccountInfo(View):
+    def render(self):
+        super().render()
+        
+        print(f"Username: {currentUser.username}")
+        print(f"Given Name: {currentUser.givenName}")
+        print(f"Surname: {currentUser.surname}")
+        print(f"Street Address: {currentUser.streetAddress}")
+        print(f"City: {currentUser.city}")
+        print(f"Zip Code: {currentUser.zipCode}")
+        print(f"Email Address: {currentUser.emailAddress}")
+        print(f"Telephone number: {currentUser.telephoneNumber}")
+        print("")
+        print(f"Account Type: {currentUser.permType}")
+
+        print("Press return to return to the main menu.")
+        input()
 
 
 class Login(View):
@@ -933,6 +989,7 @@ class CreateBackup(View):
         jsonFile.write(jsonString)
         jsonFile.close()
 
+
 class LoanList(View):
     def render(self):
         super().render()
@@ -940,27 +997,27 @@ class LoanList(View):
         loans = loanAdministration.getLoansByUser(currentUser)
         
         for loan in loans:
-            print(loan)
+            book = loan.book
 
-        #print(f"Your loans are {loans}\nPress enter to return to the main menu.")
+            print(book.isbn, book.title, book.author)
+
+        print("Press return to return to the main menu.")
         input()
         
         self.mainView.render()
+
+
+class RemoveLoans(View):
+    def render(self):
+        super().render()
+        
+        allLoans = loanAdministration.loans
+
+        for removeLoan in allLoans:
+            
 
 
 '''
     Initialize Main UI
 '''
 mainScreen = MainScreen("Main Menu")
-
-
-'''
-    Example adding book to DB
-    
-    cat = Catalog()
-    cat.addBook(9789020415605, 'Moby-Dick', 'Herman Melville', 'Netherlands', 'English', 640, 2008,'https://www.bol.com/nl/f/moby-dick/9200000079749152/', 'https://media.s-bol.com/mZZYJDPj0jkr/539x840.jpg')
-    cat.addBook(9789044643947, 'Het gouden ei', 'Tim Krabbé', 'Netherlands', 'Dutch', 104, 2019, 'https://www.bol.com/nl/f/gouden-ei/9200000079749088/', 'https://media.s-bol.com/J6Q0MLXyWXxg/525x840.jpg')
-'''
-        
-
-print()
